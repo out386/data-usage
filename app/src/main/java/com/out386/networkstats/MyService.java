@@ -14,9 +14,11 @@ import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
 import android.telephony.TelephonyManager;
+import android.util.Log;
 import android.widget.RemoteViews;
 
 import java.util.Calendar;
+import java.util.TimeZone;
 
 import static com.out386.networkstats.Utils.formatBytes;
 
@@ -60,13 +62,13 @@ public class MyService extends Service {
             remainingMsg = "Remaining: " + formatBytes(remaining);
         }
 
-        //Log.i("meh", "onStartCommand: " + usageMsg);
         forgroundify(usageMsg, remainingMsg);
 
     }
 
     private NetworkStats.Bucket getBucket() {
         Calendar calendar = Calendar.getInstance();
+        long endTime = calendar.getTimeInMillis();
         calendar.set(Calendar.HOUR_OF_DAY, 0);
         calendar.set(Calendar.MINUTE, 0);
         calendar.set(Calendar.SECOND, 0);
@@ -84,7 +86,7 @@ public class MyService extends Service {
             bucket = networkStatsManager.querySummaryForDevice(ConnectivityManager.TYPE_MOBILE,
                     subscriberID,
                     calendar.getTimeInMillis(),
-                    System.currentTimeMillis());
+                    endTime);
         } catch (RemoteException e) {
             return null;
         }
