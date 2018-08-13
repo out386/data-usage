@@ -1,8 +1,8 @@
 package com.out386.networkstats;
 
-public class Utils {
+class Utils {
 
-    public static String formatBytes(long bytes) {
+    static String formatBytes(long bytes) {
         if (bytes < 1000)
             return bytes + " B";
         if (bytes < 1024000) {

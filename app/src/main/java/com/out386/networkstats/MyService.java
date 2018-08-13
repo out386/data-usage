@@ -10,13 +10,11 @@ import android.app.usage.NetworkStatsManager;
 import android.content.Context;
 import android.content.Intent;
 import android.net.ConnectivityManager;
-import android.os.Handler;
 import android.os.IBinder;
 import android.os.RemoteException;
 import android.support.v4.app.NotificationCompat;
-import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
-import android.util.Log;
+import android.widget.RemoteViews;
 
 import java.util.Calendar;
 
@@ -32,7 +30,6 @@ public class MyService extends Service {
     private String subscriberID;
     private NotificationCompat.Builder notificationBuilder;
     private boolean first = true;
-    private Handler handler;
 
     public MyService() {
     }
@@ -49,21 +46,22 @@ public class MyService extends Service {
     }
 
     private void generateAndSetMessage() {
+        String usageMsg;
+        String remainingMsg;
         NetworkStats.Bucket bucket = getBucket();
-        String message;
-        if (bucket == null)
-            message = "No data available";
-        else {
+
+        if (bucket == null) {
+            usageMsg = "No data available";
+            remainingMsg = null;
+        } else {
             long usage = bucket.getRxBytes() + bucket.getTxBytes();
             long remaining = TOTAL_AVAILABLE - usage;
-            message = "Used: " + formatBytes(usage) + "\t\t\tAvailable: " + formatBytes(remaining);
+            usageMsg = "Used: " + formatBytes(usage);
+            remainingMsg = "Remaining: " + formatBytes(remaining);
         }
 
-        Log.i("meh", "onStartCommand: " + message);
-        /*if (handler == null)
-            handler = new Handler();
-        handler.postDelayed(this::generateAndSetMessage, 1000);*/
-        forgroundify(message);
+        //Log.i("meh", "onStartCommand: " + usageMsg);
+        forgroundify(usageMsg, remainingMsg);
 
     }
 
@@ -100,7 +98,9 @@ public class MyService extends Service {
         return tm.getSubscriberId();
     }
 
-    private void forgroundify(String message) {
+    private void forgroundify(String usage, String remaining) {
+        RemoteViews notificationLayout = getRemoteView(usage, remaining);
+
         if (notificationBuilder == null)
             notificationBuilder = new NotificationCompat.Builder(this, CHANNEL_ID);
 
@@ -109,11 +109,10 @@ public class MyService extends Service {
                 .setVibrate(null)
                 .setAutoCancel(false)
                 .setOnlyAlertOnce(true)
-                //.setContentTitle(getString(R.string.notif_running))
-                .setContentText(message)
+                .setCustomContentView(notificationLayout)
+                .setCustomBigContentView(notificationLayout)
                 .setSmallIcon(R.mipmap.ic_launcher_round)
-                .setColor(ContextCompat.getColor(getApplicationContext(), R.color.colorPrimary))
-        .setPriority(Notification.PRIORITY_MAX);
+                .setPriority(Notification.PRIORITY_MAX);
 
         if (first) {
             first = false;
@@ -123,6 +122,14 @@ public class MyService extends Service {
         Notification notif = notificationBuilder.build();
         notif.flags = Notification.FLAG_ONGOING_EVENT | Notification.FLAG_NO_CLEAR;
         startForeground(1, notif);
+    }
+
+    private RemoteViews getRemoteView(String usage, String remaining) {
+        RemoteViews remoteViews = new RemoteViews(getPackageName(), R.layout.notification);
+
+        remoteViews.setTextViewText(R.id.notif_text_use, usage);
+        remoteViews.setTextViewText(R.id.notif_text_remaining, remaining);
+        return remoteViews;
     }
 
     private void createNotifChannel() {
