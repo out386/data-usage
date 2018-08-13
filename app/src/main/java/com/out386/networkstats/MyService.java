@@ -111,7 +111,7 @@ public class MyService extends Service {
                 .setOnlyAlertOnce(true)
                 .setCustomContentView(notificationLayout)
                 .setCustomBigContentView(notificationLayout)
-                .setSmallIcon(R.mipmap.ic_launcher_round)
+                .setSmallIcon(R.drawable.ic_notif)
                 .setPriority(Notification.PRIORITY_MAX);
 
         if (first) {
