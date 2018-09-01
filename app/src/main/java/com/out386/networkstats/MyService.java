@@ -24,7 +24,7 @@ import static com.out386.networkstats.Utils.formatBytes;
 
 public class MyService extends Service {
 
-    private static final long TOTAL_AVAILABLE = (long) (1.5 * 1024 * 1024 * 1024);
+    private static final double TOTAL_AVAILABLE = 3 * 1024 * 1024 * 1024L;
     private static final String CHANNEL_ID = "standard";
 
 
@@ -56,8 +56,8 @@ public class MyService extends Service {
             usageMsg = "No data available";
             remainingMsg = null;
         } else {
-            long usage = bucket.getRxBytes() + bucket.getTxBytes();
-            long remaining = TOTAL_AVAILABLE - usage;
+            double usage = bucket.getRxBytes() + bucket.getTxBytes();
+            double remaining = TOTAL_AVAILABLE - usage;
             usageMsg = "Used: " + formatBytes(usage);
             remainingMsg = "Remaining: " + formatBytes(remaining);
         }
