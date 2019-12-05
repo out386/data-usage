@@ -1,5 +1,6 @@
 package com.out386.networkstats;
 
+import android.Manifest;
 import android.annotation.SuppressLint;
 import android.app.Notification;
 import android.app.NotificationChannel;
@@ -9,22 +10,24 @@ import android.app.usage.NetworkStats;
 import android.app.usage.NetworkStatsManager;
 import android.content.Context;
 import android.content.Intent;
+import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.net.ConnectivityManager;
 import android.os.IBinder;
 import android.os.RemoteException;
+import android.preference.PreferenceManager;
 import android.support.v4.app.NotificationCompat;
+import android.support.v4.content.ContextCompat;
 import android.telephony.TelephonyManager;
-import android.util.Log;
 import android.widget.RemoteViews;
 
 import java.util.Calendar;
-import java.util.TimeZone;
 
 import static com.out386.networkstats.Utils.formatBytes;
 
 public class MyService extends Service {
 
-    private static final double TOTAL_AVAILABLE = 3 * 1024 * 1024 * 1024L;
+    private static final double TOTAL_AVAILABLE = 2 * 1024 * 1024 * 1024L;
     private static final String CHANNEL_ID = "standard";
 
 
@@ -43,7 +46,15 @@ public class MyService extends Service {
 
     @Override
     public int onStartCommand(Intent intent, int flags, int startId) {
-        generateAndSetMessage();
+        SharedPreferences prefs = PreferenceManager.getDefaultSharedPreferences(this);
+        if (prefs.getBoolean("NOT_FIRST_START", false)) {
+            generateAndSetMessage();
+        } else {
+            if (ContextCompat.checkSelfPermission(this, Manifest.permission.READ_PHONE_STATE)
+                    != PackageManager.PERMISSION_GRANTED) {
+                startActivity(new Intent(this, DummyActivity.class));
+            }
+        }
         return START_STICKY;
     }
 
@@ -69,8 +80,10 @@ public class MyService extends Service {
     private NetworkStats.Bucket getBucket() {
         Calendar calendar = Calendar.getInstance();
         long endTime = calendar.getTimeInMillis();
+
+        // Pack renews at 12:37 am for me, and I care little enough to hardcode.
         calendar.set(Calendar.HOUR_OF_DAY, 0);
-        calendar.set(Calendar.MINUTE, 0);
+        calendar.set(Calendar.MINUTE, 37);
         calendar.set(Calendar.SECOND, 0);
         calendar.set(Calendar.MILLISECOND, 0);
 
