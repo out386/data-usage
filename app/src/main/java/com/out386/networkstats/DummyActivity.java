@@ -9,11 +9,19 @@ import android.content.pm.ApplicationInfo;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Handler;
 import android.preference.PreferenceManager;
 import android.provider.Settings;
 import android.support.v4.app.ActivityCompat;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.webkit.CookieManager;
+import android.webkit.CookieSyncManager;
+import android.webkit.WebView;
+import android.webkit.WebViewClient;
+
+import java.util.Arrays;
 
 import static android.app.AppOpsManager.MODE_ALLOWED;
 import static android.app.AppOpsManager.OPSTR_GET_USAGE_STATS;
@@ -30,6 +38,17 @@ public class DummyActivity extends AppCompatActivity {
                     new String[]{Manifest.permission.READ_PHONE_STATE},
                     5000);
         }
+        manageWebView();
+    }
+
+
+    private void manageWebView() {
+        WebView webView = findViewById(R.id.web_view);
+        CookieManager.getInstance().setAcceptCookie(true);
+        //CookieManager.getInstance().setAcceptThirdPartyCookies(webView, true);
+        webView.getSettings().setJavaScriptEnabled(true);
+        webView.setWebViewClient(new WebClient());
+        webView.loadUrl("https://www.jio.com/Jio/portal/myAccount");//https://www.jio.com/JioWebApp/index.html?root=login");
     }
 
     @Override
@@ -71,6 +90,30 @@ public class DummyActivity extends AppCompatActivity {
         prefs.edit()
                 .putBoolean("NOT_FIRST_START", true)
                 .apply();
+    }
+
+    private class WebClient extends WebViewClient {
+        private int iter = 0;
+
+        @Override
+        public void onPageFinished(WebView view, String url) {
+            super.onPageFinished(view, url);
+            if (url.startsWith("https://www.jio.com/Jio/portal/myAccount")) {
+                iter++;
+                if (iter >= 2) {    // It redirects to the same page the first time
+                    CookieManager.getInstance().flush();
+                    new Handler().postDelayed(() -> {
+                        view.evaluateJavascript(Utils.getWebViewJs(),
+                                string -> {
+                                    // Removing quotes that comes from IDK where
+                                    string = string.substring(1, string.length() - 1);
+                                    Log.i("blah:", "onPageFinished: " + Arrays.toString(string.split(":")));
+                                });
+                    }, 6000);
+                }
+            }
+        }
+
     }
 }
 

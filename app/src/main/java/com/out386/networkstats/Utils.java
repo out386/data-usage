@@ -36,4 +36,19 @@ class Utils {
         long tmp = Math.round(value);
         return (double) tmp / factor;
     }
+
+    public static String getWebViewJs() {
+        StringBuilder sb = new StringBuilder();
+        sb.append("(function() {\n");
+        sb.append("var usageDiv = document.getElementById('pt1:r1:0:r2:0:pglBC4')\n");
+        sb.append("if (!usageDiv) usageDiv = document.getElementById('pt1:r1:0:r2:1:pglBC4')\n");
+        sb.append("if (!usageDiv) return null\n");
+        sb.append("var res = usageDiv.innerText.replace('\\n', '')\n");
+        sb.append("var timeDiv = document.querySelector('.durationText.dataExpContent')\n");
+        sb.append("var totalDiv = document.querySelector('.dataRemainContent')\n");
+        sb.append("if (!timeDiv || !totalDiv) return null;\n");
+        sb.append("return `${res}:${totalDiv.innerText}:${timeDiv.innerText}`\n");
+        sb.append("})()\n");
+        return sb.toString();
+    }
 }
