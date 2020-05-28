@@ -93,27 +93,62 @@ public class DummyActivity extends AppCompatActivity {
     }
 
     private class WebClient extends WebViewClient {
+        private static final int BACKOFF = 250;
+
         private int iter = 0;
+        private Handler handler = new Handler();
 
         @Override
         public void onPageFinished(WebView view, String url) {
             super.onPageFinished(view, url);
+            hideTopBar(view);
+
             if (url.startsWith("https://www.jio.com/Jio/portal/myAccount")) {
                 iter++;
                 if (iter >= 2) {    // It redirects to the same page the first time
-                    CookieManager.getInstance().flush();
-                    new Handler().postDelayed(() -> {
-                        view.evaluateJavascript(Utils.getWebViewJs(),
-                                string -> {
-                                    // Removing quotes that comes from IDK where
-                                    string = string.substring(1, string.length() - 1);
-                                    Log.i("blah:", "onPageFinished: " + Arrays.toString(string.split(":")));
-                                });
-                    }, 6000);
+                    handler.postDelayed(new DataRunnable(view), BACKOFF);
                 }
             }
         }
 
+        private void hideTopBar(WebView view) {
+            handler.postDelayed(() ->
+                    view.evaluateJavascript(
+                            "document.querySelector(\".mobileHeaderContainer\").style.display='none'",
+                            null), 2000);
+        }
+
+        private class DataRunnable implements Runnable {
+            private WebView view;
+
+            DataRunnable(WebView webView) {
+                view = webView;
+            }
+
+            @Override
+            public void run() {
+                view.evaluateJavascript(Utils.getWebViewJs(),
+                        string -> {
+                            if (string == null) {
+                                handler.postDelayed(this, BACKOFF);
+                                Log.i("blah", "queue1");
+                                return;
+                            }
+                            // Removing quotes that comes from IDK where
+                            string = string.substring(1, string.length() - 1);
+                            String [] data = string.split(":");
+
+                            if (data.length != 3) {
+                                handler.postDelayed(this, BACKOFF);
+                                Log.i("blah", "queue2");
+                                return;
+                            }
+                            Log.i("blah:", "onPageFinished: " + Arrays.toString(string.split(":")));
+                            CookieManager.getInstance().flush();
+                        });
+            }
+        }
     }
 }
+
 
